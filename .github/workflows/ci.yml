@@ -89,14 +89,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Trivy
+        run: |
+          set -euo pipefail
+          ver="0.58.1"
+          curl -sfL "https://github.com/aquasecurity/trivy/releases/download/v${ver}/trivy_${ver}_Linux-64bit.tar.gz" \
+            | sudo tar xz -C /usr/local/bin trivy
+          trivy --version
       - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: CRITICAL,HIGH
-          exit-code: "1"
-          ignore-unfixed: true
+        run: |
+          trivy fs --severity CRITICAL,HIGH --exit-code 1 --ignore-unfixed .
 
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
