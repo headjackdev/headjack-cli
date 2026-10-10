@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: actionlint
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash
+          ./actionlint -color
+      - name: Parse workflow YAML
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          for path in sorted(Path(".github/workflows").glob("*.yml")):
+              with path.open() as f:
+                  yaml.safe_load(f)
+              print(f"ok: {path}")
+          PY
+
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Must match the system interpreter, not a uv-managed download, or
+      # sqlite-vec fails to load the extension.
+      UV_PYTHON_PREFERENCE: only-system
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        # NOT `uv python install`: python-build-standalone ships without SQLite
+        # extension-loading support. actions/setup-python's CPython has it.
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --extra dev --extra client --extra index
+      - name: Format check
+        run: uv run ruff format --check .
+      - name: Lint
+        run: uv run ruff check .
+      - name: Type check
+        run: uv run mypy
+      - name: Test
+        run: uv run pytest -m "not slow"
+      - name: MCP smoke
+        run: uv run pytest -q tests/test_tank_mcp_smoke.py
+
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Twine check
+        run: uvx twine check dist/*
+      - name: Install wheel in a fresh venv and run headjack --help
+        run: |
+          set -euo pipefail
+          wheel="$(find dist -maxdepth 1 -name 'headjack_cli-*.whl' -print -quit)"
+          test -n "$wheel"
+          uv venv /tmp/headjack-cli-packaging
+          uv pip install --python /tmp/headjack-cli-packaging/bin/python "$wheel"
+          /tmp/headjack-cli-packaging/bin/headjack --help
+
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [workflows, check, packaging, trivy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read version from pyproject.toml
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: headjack-cli ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          # Idempotent on re-runs of the same tag (e.g. docs-only follow-ups).
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

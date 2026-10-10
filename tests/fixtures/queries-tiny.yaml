@@ -1,0 +1,18 @@
+# A tiny, self-consistent query set matched against tests/fixtures/corpus — for
+# smoke-testing the CLI end to end, not a real Phase 1 instrument (see P1-14).
+
+- id: q1
+  query: "cassandra node rejoin hints piling up"
+  relevant: ["cassandra-operations"]
+  primary: "cassandra-operations"
+  phrasing: synthetic
+
+- id: q2
+  query: "restart a cassandra node without a full rebalance"
+  relevant: ["restart-node"]
+  phrasing: synthetic
+
+- id: q3
+  query: "something nothing in this corpus answers at all"
+  relevant: []
+  phrasing: synthetic

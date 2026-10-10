@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Headjack index artifacts — the index is reproducible, never committed
+*.db
+*.db-wal
+*.db-shm
+var/
+.headjack/
+
+# Model caches
+.cache/
+models/
+
+# Keys — signing keys never enter the repo
+*.pem
+*.key
+keys/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Scratch files for commit / PR bodies
+.git-commit-msg.txt
+.pr-body.txt
+
+# Local MCP server registration — may carry a real token
+.mcp.json
