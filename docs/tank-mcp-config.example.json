@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "tank": {
+      "command": "headjack",
+      "args": ["tank-serve"],
+      "env": {
+        "TANK_TOKEN": "replace-with-your-headjack-token"
+      },
+      "alwaysLoad": true
+    }
+  },
+  "_comment": "alwaysLoad: true is load-bearing. Tool Search can withhold MCP tool definitions; without this flag Tank's tools may be deferred before skill_search is ever called. Prefer `headjack install` over hand-editing this file. Optional env TANK_HEADJACK_URL overrides the built-in catalog URL when needed."
+}
