@@ -92,7 +92,7 @@ jobs:
       - name: Install Trivy
         run: |
           set -euo pipefail
-          ver="0.58.1"
+          ver="0.75.0"
           curl -sfL "https://github.com/aquasecurity/trivy/releases/download/v${ver}/trivy_${ver}_Linux-64bit.tar.gz" \
             | sudo tar xz -C /usr/local/bin trivy
           trivy --version
