@@ -50,8 +50,18 @@ required reviewers on `pypi`.
 5. Claim production: either dispatch `target=pypi` for `0.1.0`, or tag `v0.1.0` on the release commit after it is on the branch you intend to ship from.
 6. Confirm `https://pypi.org/project/headjack-cli/` and `uv tool install headjack-cli` installs the `headjack` console script.
 
+## GitHub Release asset
+
+On every `v*` tag push, the same workflow attaches `scripts/install.sh` as the
+release asset named `install.sh`. That powers the public install one-liner:
+
+```bash
+curl -fsSL https://github.com/headjackdev/headjack-cli/releases/latest/download/install.sh | bash
+```
+
 ## Out of band (not automated here)
 
 - Creating the PyPI/TestPyPI accounts and pending publishers (human).
 - Enabling 2FA on those accounts (human).
 - PEP 541 takeover of the abandoned bare name `headjack` (optional, later).
+

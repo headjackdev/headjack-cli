@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # Installs the end-user `headjack` CLI onto this user's PATH via `uv tool
 # install`, so `headjack install --scope global`, `headjack init`, etc. work
-# from any directory — not just inside a checkout of this repo. There is no
-# separate `tank` binary: "tank" is the MCP server's identity inside the
-# harness (`mcpServers.tank`) and the package name, not a second CLI —
+# from any directory. Safe to pipe from a GitHub Release:
+#
+#   curl -fsSL https://github.com/headjackdev/headjack-cli/releases/latest/download/install.sh | bash
+#
+# When run from a source checkout, installs that tree. When downloaded (or
+# piped) standalone, installs the published `headjack-cli` package from PyPI.
+#
+# There is no separate `tank` binary: "tank" is the MCP server's identity inside
+# the harness (`mcpServers.tank`) and the package name, not a second CLI —
 # `headjack install` registers it, `headjack tank-serve` is what a global
 # registration actually launches.
 #
@@ -57,19 +63,37 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 # Drop the old distribution name if present so only one `headjack` shim remains.
-if uv tool list 2>/dev/null | grep -q '^headjack-rag'; then
+if uv tool list 2>/dev/null | grep -q '^headjack-rag '; then
   echo "uninstalling previous headjack-rag tool install..." >&2
   uv tool uninstall headjack-rag || true
 fi
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Prefer a local checkout when this script lives inside one; otherwise PyPI.
+# Piped installs (`curl … | bash`) resolve BASH_SOURCE to a /dev/fd path with
+# no sibling pyproject.toml — those always take the PyPI path.
+install_spec='headjack-cli[client,dense]'
+script_path="${BASH_SOURCE[0]:-}"
+if [ -n "$script_path" ] && [ -f "$script_path" ]; then
+  maybe_root="$(cd "$(dirname "$script_path")/.." && pwd 2>/dev/null)" || maybe_root=""
+  if [ -n "$maybe_root" ] \
+    && [ -f "$maybe_root/pyproject.toml" ] \
+    && grep -qE '^name[[:space:]]*=[[:space:]]*"headjack-cli"' "$maybe_root/pyproject.toml"
+  then
+    install_spec="${maybe_root}[client,dense]"
+    echo "installing from local checkout: $maybe_root" >&2
+  else
+    echo "installing headjack-cli from PyPI" >&2
+  fi
+else
+  echo "installing headjack-cli from PyPI" >&2
+fi
 
 # `client` is mandatory — Tank's signature verification is not opt-in.
 # `dense` rides along: `headjack publish` embeds on the operator's machine.
 if [ -n "$python_bin" ]; then
-  uv tool install --force --python "$python_bin" "${repo_root}[client,dense]"
+  uv tool install --force --python "$python_bin" "$install_spec"
 else
-  uv tool install --force "${repo_root}[client,dense]"
+  uv tool install --force "$install_spec"
 fi
 
 uv tool update-shell

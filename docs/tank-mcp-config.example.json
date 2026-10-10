@@ -5,10 +5,10 @@
       "args": ["tank-serve"],
       "env": {
         "TANK_TOKEN": "replace-with-your-headjack-token",
-        "TANK_HEADJACK_URL": "https://api.headjack.dev"
+        "TANK_HEADJACK_URL": "replace-with-catalog-url-only-if-overriding-default"
       },
       "alwaysLoad": true
     }
   },
-  "_comment": "alwaysLoad: true is load-bearing. Tool Search can withhold MCP tool definitions; without this flag Tank's tools may be deferred before skill_search is ever called. Prefer `headjack install` over hand-editing this file."
+  "_comment": "alwaysLoad: true is load-bearing. Tool Search can withhold MCP tool definitions; without this flag Tank's tools may be deferred before skill_search is ever called. Prefer `headjack install` over hand-editing this file. Omit TANK_HEADJACK_URL unless you need an advanced override — the CLI default is correct for normal use."
 }

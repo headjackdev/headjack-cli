@@ -1,5 +1,17 @@
 # Install notes
 
+## One-liner (recommended)
+
+```bash
+curl -fsSL https://github.com/headjackdev/headjack-cli/releases/latest/download/install.sh | bash
+```
+
+Or with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv tool install 'headjack-cli[client,dense]'
+```
+
 ## Python and sqlite-vec
 
 `headjack index` and local vector search load the [sqlite-vec](https://github.com/asg017/sqlite-vec)
@@ -35,4 +47,4 @@ uv tool install 'headjack-cli[client,dense]'
 |------|------|
 | `~/.headjack/config.toml` | Token (and optional research `db` key) written by `headjack init` |
 | `~/.headjack/index.db` | Local SQLite index for `headjack index` / local search |
-| `$HEADJACK_REMOTE` | Override the default API (`https://api.headjack.dev`) |
+| `$HEADJACK_REMOTE` | Optional override of the catalog URL for advanced setups |
